@@ -28,24 +28,36 @@ def qec_circuit(
     # ==================== Definitions ====================
     # Define the registers
     quantum_register = qiskit.QuantumRegister(5, 'quantum')
+    if args.debug or args.verbose:
+        print("V: Quantum register defined with 5 qubits")
     syndrome = qiskit.ClassicalRegister(2, 'syndrome')
+    if args.debug or args.verbose:
+        print("V: Syndrome register defined with 2 bits")
     if register == None:
         register = qiskit.ClassicalRegister(5, 'Full Register')
+    if args.debug or args.verbose:
+        print("V: Full register defined with 5 bits")
     
     # Define the circuit if not previously defined
     if circuit == None:
         circuit = qiskit.QuantumCircuit(quantum_register, syndrome, register)
+    if args.debug or args.verbose:
+        print("V: Quantum circuit defined with the quantum register and the classical registers")
 
     # Define the simulator and set the noise if not already defined
     if simulator == None:
         # TODO add bit_flip error that only runs during the enviornemt error simulation phase
         simulator = qiskit_aer.AerSimulator()
+    if args.debug or args.verbose:
+        print("V: Simulator defined with the AerSimulator backend")
 
     # Define the topical state
     if topical_value % 2 == 1:
         circuit.x(0)
     elif topical_value % 2 != 0:
         circuit.h(0)
+    if args.debug or args.verbose:
+        print(f"V: Topical state defined with value {topical_value} and applied to the first qubit")
     
     # ==================== Encoding phase ====================
     # Use CNOT(0,1) to set the state of the 1st qubit
@@ -57,24 +69,36 @@ def qec_circuit(
     # Divide and draw the phase
     circuit.barrier()
     encodingphase = circuit.draw()
+    if args.debug or args.verbose:
+        print("V: Encoding phase completed and drawn")
+        print(f"\tEncoding phase:\n{encodingphase}")
 
     # ==================== Error simualtion phase ====================
 
     # Simulate the chance of bit-flip on qubit 0
     if random.random() <= p_bit_flip:
         circuit.x(0)
+        if args.debug or args.verbose:
+            print("V: Bit-flip error simulated on qubit 0")
     
     # Simulate the chance of bit-flip on qubit 1
     if random.random() <= p_bit_flip:
         circuit.x(1)
+        if args.debug or args.verbose:
+            print("V: Bit-flip error simulated on qubit 1")
     
     # Simulate the chance of bit-flip on qubit 2
     if random.random() <= p_bit_flip:
         circuit.x(2)
+        if args.debug or args.verbose:
+            print("V: Bit-flip error simulated on qubit 2")
     
     # Divide and draw the phase
     circuit.barrier()
     noise_phase = circuit.draw()
+    if args.debug or args.verbose:
+        print("V: Noise simulation phase completed and drawn")
+        print(f"\tNoise simulation phase:\n{noise_phase}")
 
     # ==================== Recovery operation phase ====================
 
@@ -89,6 +113,9 @@ def qec_circuit(
     # Divide and draw the phase
     circuit.barrier()
     recovery_phase = circuit.draw()
+    if args.debug or args.verbose:
+        print("V: Recovery operation phase completed and drawn")
+        print(f"\tRecovery operation phase:\n{recovery_phase}")
 
     # ==================== Error correction phase ====================
 
@@ -96,18 +123,29 @@ def qec_circuit(
     circuit.measure(quantum_register[3], syndrome[0])
     circuit.measure(quantum_register[4], syndrome[1])
     circuit.barrier()
+    if args.debug or args.verbose:
+        print("V: Ancilla measured and syndrome register updated")
 
     # apply corrections based on the measured of the ancilla
     with circuit.if_test((syndrome, 1)):
         circuit.x(quantum_register[0])
+        if args.debug or args.verbose:
+            print("V: Correction applied to qubit 0 based on syndrome measurement")
     with circuit.if_test((syndrome, 3)):
         circuit.x(quantum_register[1])
+        if args.debug or args.verbose:
+            print("V: Correction applied to qubit 1 based on syndrome measurement")
     with circuit.if_test((syndrome, 2)):
         circuit.x(quantum_register[2])
+        if args.debug or args.verbose:
+            print("V: Correction applied to qubit 2 based on syndrome measurement")
 
     # Divide and draw the phase
     circuit.barrier()
     correction_phase = circuit.draw()
+    if args.debug or args.verbose:
+        print("V: Error correction phase completed and drawn")
+        print(f"\tError correction phase:\n{correction_phase}")
     
     # ==================== Evaluate the circuit ====================
 
