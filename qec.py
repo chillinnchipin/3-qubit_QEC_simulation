@@ -28,27 +28,27 @@ def qec_circuit(
     # ==================== Definitions ====================
     # Define the registers
     quantum_register = qiskit.QuantumRegister(5, 'quantum')
-    if args.debug or args.verbose:
+    if ARGS.debug or ARGS.verbose:
         print("V: Quantum register defined with 5 qubits")
     syndrome = qiskit.ClassicalRegister(2, 'syndrome')
-    if args.debug or args.verbose:
+    if ARGS.debug or ARGS.verbose:
         print("V: Syndrome register defined with 2 bits")
     if register == None:
         register = qiskit.ClassicalRegister(5, 'Full Register')
-    if args.debug or args.verbose:
+    if ARGS.debug or ARGS.verbose:
         print("V: Full register defined with 5 bits")
     
     # Define the circuit if not previously defined
     if circuit == None:
         circuit = qiskit.QuantumCircuit(quantum_register, syndrome, register)
-    if args.debug or args.verbose:
+    if ARGS.debug or ARGS.verbose:
         print("V: Quantum circuit defined with the quantum register and the classical registers")
 
     # Define the simulator and set the noise if not already defined
     if simulator == None:
         # TODO add bit_flip error that only runs during the enviornemt error simulation phase
         simulator = qiskit_aer.AerSimulator()
-    if args.debug or args.verbose:
+    if ARGS.debug or ARGS.verbose:
         print("V: Simulator defined with the AerSimulator backend")
 
     # Define the topical state
@@ -56,7 +56,7 @@ def qec_circuit(
         circuit.x(0)
     elif topical_value % 2 != 0:
         circuit.h(0)
-    if args.debug or args.verbose:
+    if ARGS.debug or ARGS.verbose:
         print(f"V: Topical state defined with value {topical_value} and applied to the first qubit")
     
     # ==================== Encoding phase ====================
@@ -69,7 +69,7 @@ def qec_circuit(
     # Divide and draw the phase
     circuit.barrier()
     encodingphase = circuit.draw()
-    if args.debug or args.verbose:
+    if ARGS.debug or ARGS.verbose:
         print("V: Encoding phase completed and drawn")
         print(f"\tEncoding phase:\n{encodingphase}")
 
@@ -78,25 +78,25 @@ def qec_circuit(
     # Simulate the chance of bit-flip on qubit 0
     if random.random() <= p_bit_flip:
         circuit.x(0)
-        if args.debug or args.verbose:
+        if ARGS.debug or ARGS.verbose:
             print("V: Bit-flip error simulated on qubit 0")
     
     # Simulate the chance of bit-flip on qubit 1
     if random.random() <= p_bit_flip:
         circuit.x(1)
-        if args.debug or args.verbose:
+        if ARGS.debug or ARGS.verbose:
             print("V: Bit-flip error simulated on qubit 1")
     
     # Simulate the chance of bit-flip on qubit 2
     if random.random() <= p_bit_flip:
         circuit.x(2)
-        if args.debug or args.verbose:
+        if ARGS.debug or ARGS.verbose:
             print("V: Bit-flip error simulated on qubit 2")
     
     # Divide and draw the phase
     circuit.barrier()
     noise_phase = circuit.draw()
-    if args.debug or args.verbose:
+    if ARGS.debug or ARGS.verbose:
         print("V: Noise simulation phase completed and drawn")
         print(f"\tNoise simulation phase:\n{noise_phase}")
 
@@ -113,7 +113,7 @@ def qec_circuit(
     # Divide and draw the phase
     circuit.barrier()
     recovery_phase = circuit.draw()
-    if args.debug or args.verbose:
+    if ARGS.debug or ARGS.verbose:
         print("V: Recovery operation phase completed and drawn")
         print(f"\tRecovery operation phase:\n{recovery_phase}")
 
@@ -123,27 +123,27 @@ def qec_circuit(
     circuit.measure(quantum_register[3], syndrome[0])
     circuit.measure(quantum_register[4], syndrome[1])
     circuit.barrier()
-    if args.debug or args.verbose:
+    if ARGS.debug or ARGS.verbose:
         print("V: Ancilla measured and syndrome register updated")
 
     # apply corrections based on the measured of the ancilla
     with circuit.if_test((syndrome, 1)):
         circuit.x(quantum_register[0])
-        if args.debug or args.verbose:
+        if ARGS.debug or ARGS.verbose:
             print("V: Correction applied to qubit 0 based on syndrome measurement")
     with circuit.if_test((syndrome, 3)):
         circuit.x(quantum_register[1])
-        if args.debug or args.verbose:
+        if ARGS.debug or ARGS.verbose:
             print("V: Correction applied to qubit 1 based on syndrome measurement")
     with circuit.if_test((syndrome, 2)):
         circuit.x(quantum_register[2])
-        if args.debug or args.verbose:
+        if ARGS.debug or ARGS.verbose:
             print("V: Correction applied to qubit 2 based on syndrome measurement")
 
     # Divide and draw the phase
     circuit.barrier()
     correction_phase = circuit.draw()
-    if args.debug or args.verbose:
+    if ARGS.debug or ARGS.verbose:
         print("V: Error correction phase completed and drawn")
         print(f"\tError correction phase:\n{correction_phase}")
     
@@ -173,11 +173,11 @@ def qec_circuit(
         most_frequent_state = max(counts, key=counts.get)
         # Extract just the first 3 bits (qubits 0, 1, 2) from the result
         actual_state = most_frequent_state[2:5] #FIXME: is only extracting 2 chars instead of the last 3
-        if args.debug or args.verbose:
+        if ARGS.debug or ARGS.verbose:
             print(f"V: Most frequent state from measurement: {most_frequent_state}, Extracted state: {actual_state}")
         
         success = (actual_state == expected_state)
-        if args.debug or args.verbose:
+        if ARGS.debug or ARGS.verbose:
             print(f"V: Expected state: {expected_state}, Actual state: {actual_state}, Success: {success}")
         return success
     return False
@@ -191,40 +191,40 @@ def main():
     parser.add_argument("-sh", "--iterations", type=int, default=1, help="The number of times to run the circuit with the same parameters. (default: 1)")
     parser.add_argument("-V", "--verbose", action="store_true", help="Print the circuit and the results in a more verbose format.")
     parser.add_argument("-d", "--debug", action="store_true", help="Turns on the debug mode, which sets the verbose mode and prints any errors that occur")
-    global args
-    args = parser.parse_args()
+    global ARGS
+    ARGS = parser.parse_args()
 
     # Print verbose outputs
-    if args.debug:
-        args.verbose = True
+    if ARGS.debug:
+        ARGS.verbose = True
         print("V: Debug mode is set to true")
-    if args.verbose:
+    if ARGS.verbose:
         print("V: Verbose mode is set to true")
-    if args.verbose or args.debug:
-        print(f"V: Topical value: {args.topical_value}")
-        print(f"V: Probability of bit-flip error: {args.p_bit_flip}")
-        print(f"V: Number of shots: {args.shots}")
-        print(f"V: Number of iterations: {args.iterations}")
+    if ARGS.verbose or ARGS.debug:
+        print(f"V: Topical value: {ARGS.topical_value}")
+        print(f"V: Probability of bit-flip error: {ARGS.p_bit_flip}")
+        print(f"V: Number of shots: {ARGS.shots}")
+        print(f"V: Number of iterations: {ARGS.iterations}")
 
     # Run the circuit for the specified number of iterations
     sucesses: int = 0
-    for i in range(args.iterations):
-        if args.verbose or args.debug:
-            print(f"V: Iteration {i+1}/{args.iterations}")
+    for i in range(ARGS.iterations):
+        if ARGS.verbose or ARGS.debug:
+            print(f"V: Iteration {i+1}/{ARGS.iterations}")
         succes = qec_circuit(
-            topical_value=args.topical_value,
-            p_bit_flip=args.p_bit_flip,
-            shots=args.shots
+            topical_value=ARGS.topical_value,
+            p_bit_flip=ARGS.p_bit_flip,
+            shots=ARGS.shots
         )
         if succes:
             sucesses += 1
-            if args.debug or args.verbose:
+            if ARGS.debug or ARGS.verbose:
                 print(f"V: Iteration {i+1} was successful")
         else:
-            if args.debug or args.verbose:
+            if ARGS.debug or ARGS.verbose:
                 print(f"V: Iteration {i+1} was not successful")
-    success_rate = sucesses / args.iterations
-    print(f"{sucesses} out of {args.iterations} iterations were successful. Success rate: {success_rate:.2%}")
+    success_rate = sucesses / ARGS.iterations
+    print(f"{sucesses} out of {ARGS.iterations} iterations were successful. Success rate: {success_rate:.2%}")
     return 0
 
 if __name__ == "__main__":
