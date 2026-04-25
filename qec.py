@@ -124,6 +124,38 @@ def qec_circuit(
     print(counts)
 
 def main():
+    # Parse the command line arguments
+    parser = argparse.ArgumentParser(description="A simple implementation of the 3-qubit bit-flip code in Qiskit.")
+    parser.add_argument("-v", "--topical_value", type=float, default=0, help="The value of the topical state to be encoded. (default: 0)")
+    parser.add_argument("-p", "--p_bit_flip", type=float, default=0, help="The probability of a bit-flip error occurring on each qubit during the noise simulation phase. (default: 0)")
+    parser.add_argument("-s", "--shots", type=int, default=1024, help="The number of shots to run the circuit on the simulator. (default: 1024)")
+    parser.add_argument("-sh", "--iterations", type=int, default=1, help="The number of times to run the circuit with the same parameters. (default: 1)")
+    parser.add_argument("-V", "--verbose", action="store_true", help="Print the circuit and the results in a more verbose format.")
+    parser.add_argument("-d", "--debug", action="store_true", help="Turns on the debug mode, which sets the verbose mode and prints any errors that occur")
+    global args
+    args = parser.parse_args()
+
+    # Print verbose outputs
+    if args.debug:
+        args.verbose = True
+        print("V: Debug mode is set to true")
+    if args.verbose:
+        print("V: Verbose mode is set to true")
+    if args.verbose or args.debug:
+        print(f"V: Topical value: {args.topical_value}")
+        print(f"V: Probability of bit-flip error: {args.p_bit_flip}")
+        print(f"V: Number of shots: {args.shots}")
+        print(f"V: Number of iterations: {args.iterations}")
+
+    # Run the circuit for the specified number of iterations
+    for i in range(args.iterations):
+        if args.verbose or args.debug:
+            print(f"V: Iteration {i+1}/{args.iterations}")
+        qec_circuit(
+            topical_value=args.topical_value,
+            p_bit_flip=args.p_bit_flip,
+            shots=args.shots
+        )
     return 0
 
 if __name__ == "__main__":
