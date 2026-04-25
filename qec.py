@@ -86,11 +86,16 @@ def qec_circuit(
     circuit.cx(1,4)
     circuit.cx(2,4)
 
+    # Divide and draw the phase
+    circuit.barrier()
+    recovery_phase = circuit.draw()
+
     # ==================== Error correction phase ====================
 
     # measure the qubits in the ancilla
     circuit.measure(quantum_register[3], syndrome[0])
     circuit.measure(quantum_register[4], syndrome[1])
+    circuit.barrier()
 
     # apply corrections based on the measured of the ancilla
     with circuit.if_test((syndrome, 1)):
