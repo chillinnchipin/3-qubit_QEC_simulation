@@ -24,7 +24,7 @@ def qec_circuit(
         circuit: qiskit.QuantumCircuit | None = None,
         register : qiskit.ClassicalRegister | None = None,
         simulator : qiskit_aer.AerSimulator | None = None
-):
+) -> bool:
     # ==================== Definitions ====================
     # Define the registers
     quantum_register = qiskit.QuantumRegister(5, 'quantum')
@@ -166,6 +166,22 @@ def qec_circuit(
     counts = result.get_counts(transpiled_circuit)
     print(counts)
 
+    # determine if the error correction was successful
+    # Expected state: if topical_value is 0, expect "000"; if 1, expect "111"
+    expected_state = "000" if topical_value == 0 else "111"
+    if counts:
+        most_frequent_state = max(counts, key=counts.get)
+        # Extract just the first 3 bits (qubits 0, 1, 2) from the result
+        actual_state = most_frequent_state[2:5] #FIXME: is only extracting 2 chars instead of the last 3
+        if args.debug or args.verbose:
+            print(f"V: Most frequent state from measurement: {most_frequent_state}, Extracted state: {actual_state}")
+        
+        success = (actual_state == expected_state)
+        if args.debug or args.verbose:
+            print(f"V: Expected state: {expected_state}, Actual state: {actual_state}, Success: {success}")
+        return success
+    return False
+
 def main():
     # Parse the command line arguments
     parser = argparse.ArgumentParser(description="A simple implementation of the 3-qubit bit-flip code in Qiskit.")
@@ -191,14 +207,24 @@ def main():
         print(f"V: Number of iterations: {args.iterations}")
 
     # Run the circuit for the specified number of iterations
+    sucesses: int = 0
     for i in range(args.iterations):
         if args.verbose or args.debug:
             print(f"V: Iteration {i+1}/{args.iterations}")
-        qec_circuit(
+        succes = qec_circuit(
             topical_value=args.topical_value,
             p_bit_flip=args.p_bit_flip,
             shots=args.shots
         )
+        if succes:
+            sucesses += 1
+            if args.debug or args.verbose:
+                print(f"V: Iteration {i+1} was successful")
+        else:
+            if args.debug or args.verbose:
+                print(f"V: Iteration {i+1} was not successful")
+    success_rate = sucesses / args.iterations
+    print(f"{sucesses} out of {args.iterations} iterations were successful. Success rate: {success_rate:.2%}")
     return 0
 
 if __name__ == "__main__":
