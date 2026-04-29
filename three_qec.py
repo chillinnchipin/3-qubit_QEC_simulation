@@ -50,7 +50,31 @@ def three_qubit_qec(
     draw_partial_circuit: bool = False,
 ) -> {qiskit.QuantumCircuit, bool}:
     """Simulates the three-qubit quantum error correction code, including encoding, noise simulation, recovery, and evaluation."""
-    pass
+    # Define values
+    quatum_register = qiskit.QuantumRegister(3, "q")
+    ancilla = qiskit.QuantumRegister(2, "a")
+    syndrome = qiskit.ClassicalRegister(2, "c")
+    if register is None:
+        register = qiskit.ClassicalRegister(5, "Full Register")
+    elif register.size < 5:
+        raise ValueError("The classical register must have at least 5 bits.")
+    if circuit is None:
+        circuit = qiskit.QuantumCircuit(quatum_register, ancilla, syndrome, register) #FIXME: this may cause an error, check qiskit documentation for QuantumCircuit initialization
+    if simulator is None:
+        simulator = qiskit_aer.AerSimulator()
+
+    # Encoding phase
+    circuit = encoding_phase(topical_value, circuit, draw_partial_circuit)
+
+    # Noise simulation
+    circuit = noise_simulation(circuit, p_bit_flip, draw_partial_circuit)
+
+    # Recovery phase
+    circuit = recovery_phase(circuit, draw_partial_circuit)
+
+    # Evaluate the qec
+    qec_success = qec_evaluation(topical_value, circuit)
+    return circuit, qec_success
 
 def main():
     pass
