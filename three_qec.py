@@ -8,7 +8,27 @@ def encoding_phase(
     draw_circuit: bool = False,
 ) -> qiskit.QuantumCircuit:
     """Simulates the encoding phase of the three-qubit quantum error correction code."""
-    pass
+    # Define circuit
+    if circuit is None:
+        circuit = qiskit.QuantumCircuit(3, name="Encoding Phase")
+    
+    # Set topical value
+    if topical_value % 2 == 1:
+        circuit.x(0)  # Encode |1> state
+    elif topical_value % 2 != 0:
+        circuit.h(0)  # Encode |+> state
+    else:
+        circuit.i(0)  # Encode |0> state
+    
+
+    # Encode the state into three qubits
+    circuit.cx(0, 1)  # CNOT from qubit 0 to qubit 1
+    circuit.cx(0, 2)  # CNOT from qubit 0 to qubit 2
+
+    if draw_circuit:
+        print("Encoding Phase Circuit:")
+        print(circuit.draw())
+    return circuit
 
 def recovery_phase(
     circuit: qiskit.QuantumCircuit,
