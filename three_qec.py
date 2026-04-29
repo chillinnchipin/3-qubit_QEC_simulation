@@ -35,7 +35,15 @@ def recovery_phase(
     draw_circuit: bool = False,
 ) -> qiskit.QuantumCircuit:
     """Simulates the recovery phase of the three-qubit quantum error correction code."""
-    pass
+    # Set the ancilla values using CNOT gates
+    circuit.cx(0, 3)  # CNOT from qubit 0 to ancilla 0
+    circuit.cx(1, 3)  # CNOT from qubit 1 to ancilla 0
+    circuit.cx(0, 4)  # CNOT from qubit 0 to ancilla 1
+    circuit.cx(2, 4)  # CNOT from qubit 2 to ancilla 1
+    if draw_circuit:
+        print("Recovery Phase Circuit:")
+        print(circuit.draw())
+    return circuit
 
 def noise_simulation(
     circuit: qiskit.QuantumCircuit,
