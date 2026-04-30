@@ -23,7 +23,8 @@ def qec_circuit(
         shots : int = 1024,
         circuit: qiskit.QuantumCircuit | None = None,
         register : qiskit.ClassicalRegister | None = None,
-        simulator : qiskit_aer.AerSimulator | None = None
+        simulator : qiskit_aer.AerSimulator | None = None,
+        draw_circuit: bool = False,
 ) -> bool:
     # ==================== Definitions ====================
     # Define the registers
@@ -153,10 +154,13 @@ def qec_circuit(
     circuit.measure(quantum_register[0], register[0])
     circuit.measure(quantum_register[1], register[1])
     circuit.measure(quantum_register[2], register[2])
+    circuit.measure(quantum_register[3], register[3])
+    circuit.measure(quantum_register[4], register[4])
 
     # draw and print the final circuit
     final_circuit = circuit.draw()
-    print(final_circuit)
+    if draw_circuit:
+        print(final_circuit)
     
     # compile the circuit
     transpiled_circuit = qiskit.compiler.transpile(circuit, simulator)
@@ -164,7 +168,8 @@ def qec_circuit(
     # run the circuit on the simulator
     result = simulator.run(transpiled_circuit, shots=shots).result()
     counts = result.get_counts(transpiled_circuit)
-    print(counts)
+    if draw_circuit:
+        print(counts)
 
     # determine if the error correction was successful
     # Expected state: if topical_value is 0, expect "000"; if 1, expect "111"
@@ -188,11 +193,17 @@ def main():
     parser.add_argument("-v", "--topical_value", type=float, default=0, help="The value of the topical state to be encoded. (default: 0)")
     parser.add_argument("-p", "--p_bit_flip", type=float, default=0, help="The probability of a bit-flip error occurring on each qubit during the noise simulation phase. (default: 0)")
     parser.add_argument("-s", "--shots", type=int, default=1024, help="The number of shots to run the circuit on the simulator. (default: 1024)")
-    parser.add_argument("-sh", "--iterations", type=int, default=1, help="The number of times to run the circuit with the same parameters. (default: 1)")
+    parser.add_argument("-it", "--iterations", type=int, default=1, help="The number of times to run the circuit with the same parameters. (default: 1)")
+    parser.add_argument("-itd", "--iterate_down", action="store_true", help="Iterate down the topical value from the specified value to 0, running the circuit for each value. (default: false)")
+    parser.add_argument("-itu", "--iterate_up", action="store_true", help="Iterate up the topical value from 0 to the specified value, running the circuit for each value. (default: false)")
+    parser.add_argument("-d", "--draw", action="store_true", help="Draw the circuit at iteration")
     parser.add_argument("-V", "--verbose", action="store_true", help="Print the circuit and the results in a more verbose format.")
-    parser.add_argument("-d", "--debug", action="store_true", help="Turns on the debug mode, which sets the verbose mode and prints any errors that occur")
+    parser.add_argument("-D", "--debug", action="store_true", help="Turns on the debug mode, which sets the verbose mode and prints any errors that occur")
     global ARGS
     ARGS = parser.parse_args()
+    if ARGS.iterate_down and ARGS.iterate_up:
+        print("Error: Cannot iterate both up and down. Please choose one or the other.")
+        return 1
 
     # Print verbose outputs
     if ARGS.debug:
@@ -208,13 +219,16 @@ def main():
 
     # Run the circuit for the specified number of iterations
     sucesses: int = 0
+    current_topical_value = ARGS.topical_value
+    VALUE_STEP = ARGS.topical_value / ARGS.iterations if ARGS.iterations > 0 else 0
     for i in range(ARGS.iterations):
         if ARGS.verbose or ARGS.debug:
             print(f"V: Iteration {i+1}/{ARGS.iterations}")
         succes = qec_circuit(
             topical_value=ARGS.topical_value,
             p_bit_flip=ARGS.p_bit_flip,
-            shots=ARGS.shots
+            shots=ARGS.shots,
+            draw_circuit=ARGS.draw,
         )
         if succes:
             sucesses += 1
@@ -223,6 +237,10 @@ def main():
         else:
             if ARGS.debug or ARGS.verbose:
                 print(f"V: Iteration {i+1} was not successful")
+        if ARGS.iterate_down:
+            current_topical_value -= VALUE_STEP
+        elif ARGS.iterate_up:
+            current_topical_value += VALUE_STEP
     success_rate = sucesses / ARGS.iterations
     print(f"{sucesses} out of {ARGS.iterations} iterations were successful. Success rate: {success_rate:.2%}")
     return 0
