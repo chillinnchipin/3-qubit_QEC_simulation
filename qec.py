@@ -178,10 +178,14 @@ def qec_circuit(
     failures: int = 0
     success_rate: float = 0
     for count in counts:
-        if count == expected_state:
+        if count[:3] == expected_state:
             sucesses += counts[count]
+            if ARGS.debug or ARGS.verbose:
+                print(f"V: Count {count} is a success with {counts[count]} shots")
         else:
             failures += counts[count]
+            if ARGS.debug or ARGS.verbose:
+                print(f"V: Count {count} is a failure with {counts[count]} shots")
     success_rate = sucesses / (sucesses + failures) if (sucesses + failures) > 0 else 0
     return success_rate, sucesses, failures
 
@@ -215,12 +219,12 @@ def main():
         print(f"V: Number of iterations: {ARGS.iterations}")
 
     # Run the circuit for the specified number of iterations
-    sucesses: int = 0
+    successes: int = 0
     failures: int = 0
     step_size = (1 - ARGS.p_bit_flip) / ARGS.iterations if ARGS.iterate_down or ARGS.iterate_up else 0
     for i in range(ARGS.iterations):
         if ARGS.verbose or ARGS.debug:
-            print(f"V: Iteration {i+1/{ARGS.iterations}}")
+            print(f"V: Iteration {i+1}/{ARGS.iterations}")
         rate, success, failure = qec_circuit(
             topical_value=ARGS.topical_value,
             p_bit_flip=ARGS.p_bit_flip,
@@ -228,9 +232,9 @@ def main():
             draw_circuit=ARGS.draw,
         )
         if ARGS.verbose or ARGS.debug:
-            print(f"V: Iteration {i+1}/{ARGS.iteration} finished running with success rate of {rate}")
+            print(f"V: Iteration {i+1}/{ARGS.iterations} finished running with success rate of {rate}")
         successes += success
-        failures += failures
+        failures += failure
         print(f"Finished Running circuit {i+1}: Succesful shots: {success}, Failed shots: {failure}, Success rate: {rate:.2%}")
         if ARGS.iterate_up:
             ARGS.p_bit_flip += step_size
