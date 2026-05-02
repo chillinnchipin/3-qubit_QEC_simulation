@@ -24,8 +24,9 @@ def qec_circuit(
         circuit: qiskit.QuantumCircuit | None = None,
         register : qiskit.ClassicalRegister | None = None,
         simulator : qiskit_aer.AerSimulator | None = None,
+        error_bit_flip : qiskit_aer.noise.QuantumError | None = None,
         draw_circuit: bool = False,
-) -> bool:
+) -> {float, int, int}:
     # ==================== Definitions ====================
     # Define the registers
     quantum_register = qiskit.QuantumRegister(5, 'quantum')
@@ -35,7 +36,7 @@ def qec_circuit(
     if ARGS.debug or ARGS.verbose:
         print("V: Syndrome register defined with 2 bits")
     if register == None:
-        register = qiskit.ClassicalRegister(5, 'Full Register')
+        register = qiskit.ClassicalRegister(3, 'Full Register')
     if ARGS.debug or ARGS.verbose:
         print("V: Full register defined with 5 bits")
     
@@ -51,6 +52,10 @@ def qec_circuit(
         simulator = qiskit_aer.AerSimulator()
     if ARGS.debug or ARGS.verbose:
         print("V: Simulator defined with the AerSimulator backend")
+    if error_bit_flip == None:
+        error_bit_flip = qiskit_aer.noise.errors.pauli_error([('X', p_bit_flip), ('I', 1 - p_bit_flip)])
+    if ARGS.debug or ARGS.verbose:
+        print(f"V: Bit-flip error defined with probability {p_bit_flip} for X and {1 - p_bit_flip} for I")
 
     # Define the topical state
     if topical_value % 2 == 1:
@@ -77,22 +82,19 @@ def qec_circuit(
     # ==================== Error simualtion phase ====================
 
     # Simulate the chance of bit-flip on qubit 0
-    if random.random() <= p_bit_flip:
-        circuit.x(0)
-        if ARGS.debug or ARGS.verbose:
-            print("V: Bit-flip error simulated on qubit 0")
+    circuit.append(error_bit_flip, [0])
+    if ARGS.debug or ARGS.verbose:
+        print(f"V: Added chance of bit flip error to qubit 0 with chance {p_bit_flip}")
     
     # Simulate the chance of bit-flip on qubit 1
-    if random.random() <= p_bit_flip:
-        circuit.x(1)
-        if ARGS.debug or ARGS.verbose:
-            print("V: Bit-flip error simulated on qubit 1")
-    
+    circuit.append(error_bit_flip, [1])
+    if ARGS.debug or ARGS.verbose:
+        print(f"V: Added chance of bit flip error to qubit 1 with chance {p_bit_flip}")
+
     # Simulate the chance of bit-flip on qubit 2
-    if random.random() <= p_bit_flip:
-        circuit.x(2)
-        if ARGS.debug or ARGS.verbose:
-            print("V: Bit-flip error simulated on qubit 2")
+    circuit.append(error_bit_flip, [2])
+    if ARGS.debug or ARGS.verbose:
+        print(f"V: Added chance of bit flip error to qubit 2 with chance {p_bit_flip}")
     
     # Divide and draw the phase
     circuit.barrier()
@@ -154,8 +156,6 @@ def qec_circuit(
     circuit.measure(quantum_register[0], register[0])
     circuit.measure(quantum_register[1], register[1])
     circuit.measure(quantum_register[2], register[2])
-    circuit.measure(quantum_register[3], register[3])
-    circuit.measure(quantum_register[4], register[4])
 
     # draw and print the final circuit
     final_circuit = circuit.draw()
@@ -174,18 +174,16 @@ def qec_circuit(
     # determine if the error correction was successful
     # Expected state: if topical_value is 0, expect "000"; if 1, expect "111"
     expected_state = "000" if topical_value == 0 else "111"
-    if counts:
-        most_frequent_state = max(counts, key=counts.get)
-        # Extract just the first 3 bits (qubits 0, 1, 2) from the result
-        actual_state = most_frequent_state[2:5] #FIXME: is only extracting 2 chars instead of the last 3
-        if ARGS.debug or ARGS.verbose:
-            print(f"V: Most frequent state from measurement: {most_frequent_state}, Extracted state: {actual_state}")
-        
-        success = (actual_state == expected_state)
-        if ARGS.debug or ARGS.verbose:
-            print(f"V: Expected state: {expected_state}, Actual state: {actual_state}, Success: {success}")
-        return success
-    return False
+    sucesses: int = 0
+    failures: int = 0
+    success_rate: float = 0
+    for count in counts:
+        if count == expected_state:
+            sucesses += counts[count]
+        else:
+            failures += counts[count]
+    success_rate = sucesses / (sucesses + failures) if (sucesses + failures) > 0 else 0
+    return success_rate, sucesses, failures
 
 def main():
     # Parse the command line arguments
@@ -219,30 +217,23 @@ def main():
 
     # Run the circuit for the specified number of iterations
     sucesses: int = 0
-    current_topical_value = ARGS.topical_value
-    VALUE_STEP = ARGS.topical_value / ARGS.iterations if ARGS.iterations > 0 else 0
+    failures: int = 0
     for i in range(ARGS.iterations):
         if ARGS.verbose or ARGS.debug:
-            print(f"V: Iteration {i+1}/{ARGS.iterations}")
-        succes = qec_circuit(
+            print(f"V: Iteration {i+1/{ARGS.iterations}}")
+        rate, success, failure = qec_circuit(
             topical_value=ARGS.topical_value,
             p_bit_flip=ARGS.p_bit_flip,
             shots=ARGS.shots,
             draw_circuit=ARGS.draw,
         )
-        if succes:
-            sucesses += 1
-            if ARGS.debug or ARGS.verbose:
-                print(f"V: Iteration {i+1} was successful")
-        else:
-            if ARGS.debug or ARGS.verbose:
-                print(f"V: Iteration {i+1} was not successful")
-        if ARGS.iterate_down:
-            current_topical_value -= VALUE_STEP
-        elif ARGS.iterate_up:
-            current_topical_value += VALUE_STEP
-    success_rate = sucesses / ARGS.iterations
-    print(f"{sucesses} out of {ARGS.iterations} iterations were successful. Success rate: {success_rate:.2%}")
+        if ARGS.verbose or ARGS.debug:
+            print(f"V: Iteration {i+1}/{ARGS.iteration} finished running with success rate of {rate}")
+        successes += success
+        failures += failures
+        print(f"Finished Running circuit {i+1}: Succesful shots: {success}, Failed shots: {failure}, Success rate: {rate:.2%}")
+    sucess_rate = successes / (successes + failures)
+    print(f"Total successful shots: {successes}, Total failed shots: {failures}, Overall success rate: {(sucess_rate):.2%}")
     return 0
 
 if __name__ == "__main__":
