@@ -192,16 +192,15 @@ def main():
     parser.add_argument("-p", "--p_bit_flip", type=float, default=0, help="The probability of a bit-flip error occurring on each qubit during the noise simulation phase. (default: 0)")
     parser.add_argument("-s", "--shots", type=int, default=1024, help="The number of shots to run the circuit on the simulator. (default: 1024)")
     parser.add_argument("-it", "--iterations", type=int, default=1, help="The number of times to run the circuit with the same parameters. (default: 1)")
-    parser.add_argument("-itd", "--iterate_down", action="store_true", help="Iterate down the topical value from the specified value to 0, running the circuit for each value. (default: false)")
-    parser.add_argument("-itu", "--iterate_up", action="store_true", help="Iterate up the topical value from 0 to the specified value, running the circuit for each value. (default: false)")
+    parser.add_argument("--iterate_up", action="store_true", help="Increase the probability of bit flip error with each iteration.")
+    parser.add_argument("--iterate_down", action="store_true", help="Decrease the probability of bit flip error with each iteration.")
     parser.add_argument("-d", "--draw", action="store_true", help="Draw the circuit at iteration")
     parser.add_argument("-V", "--verbose", action="store_true", help="Print the circuit and the results in a more verbose format.")
     parser.add_argument("-D", "--debug", action="store_true", help="Turns on the debug mode, which sets the verbose mode and prints any errors that occur")
     global ARGS
     ARGS = parser.parse_args()
     if ARGS.iterate_down and ARGS.iterate_up:
-        print("Error: Cannot iterate both up and down. Please choose one or the other.")
-        return 1
+        raise ValueError("Error: Cannot iterate both up and down. Please choose one or the other.")
 
     # Print verbose outputs
     if ARGS.debug:
@@ -218,6 +217,7 @@ def main():
     # Run the circuit for the specified number of iterations
     sucesses: int = 0
     failures: int = 0
+    step_size = (1 - ARGS.p_bit_flip) / ARGS.iterations if ARGS.iterate_down or ARGS.iterate_up else 0
     for i in range(ARGS.iterations):
         if ARGS.verbose or ARGS.debug:
             print(f"V: Iteration {i+1/{ARGS.iterations}}")
@@ -232,6 +232,10 @@ def main():
         successes += success
         failures += failures
         print(f"Finished Running circuit {i+1}: Succesful shots: {success}, Failed shots: {failure}, Success rate: {rate:.2%}")
+        if ARGS.iterate_up:
+            ARGS.p_bit_flip += step_size
+        elif ARGS.iterate_down:
+            ARGS.p_bit_flip -= step_size
     sucess_rate = successes / (successes + failures)
     print(f"Total successful shots: {successes}, Total failed shots: {failures}, Overall success rate: {(sucess_rate):.2%}")
     return 0
