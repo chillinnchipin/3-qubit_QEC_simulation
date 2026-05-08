@@ -176,12 +176,18 @@ def qec_circuit(
 
     # determine if the error correction was successful
     # Expected state: if topical_value is 0, expect "000"; if 1, expect "111"
-    expected_state = "000" if topical_value == 0 else "111"
+    if topical_value % 2 == 0:
+        expected_states = ["000"]
+    elif topical_value % 2 == 1:
+        expected_states = ["111"]
+    else:
+        expected_states = ["000", "111"]
+
     sucesses: int = 0
     failures: int = 0
     success_rate: float = 0
     for count in counts:
-        if count[:3] == expected_state:
+        if count[:3] in expected_states:
             sucesses += counts[count]
             if ARGS.debug or ARGS.verbose:
                 print(f"V: Count {count} is a success with {counts[count]} shots")
