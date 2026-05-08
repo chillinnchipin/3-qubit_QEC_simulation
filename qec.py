@@ -47,7 +47,6 @@ def qec_circuit(
 
     # Define the simulator and set the noise if not already defined
     if simulator == None:
-        # TODO add bit_flip error that only runs during the enviornemt error simulation phase
         simulator = qiskit_aer.AerSimulator()
     if ARGS.debug or ARGS.verbose:
         print("V: Simulator defined with the AerSimulator backend")
@@ -57,6 +56,11 @@ def qec_circuit(
         print(f"V: Bit-flip error defined with probability {p_bit_flip} for X and {1 - p_bit_flip} for I")
 
     # Define the topical state
+    # FIXME: improve options for how topical state is determined 
+        # i.e. the topical value parameter should mean the probability of 1 state
+        # if topical_value equals 1, then the qubit should be |1>
+        # if topical_value equals 0, then qubiut should be |0>
+        # else (if topical_value not equal to (1 or 0)) qubit should be (1-topical_value)|0> + (topical_value)|1>
     if topical_value % 2 == 1:
         circuit.x(0)
     elif topical_value % 2 != 0:
