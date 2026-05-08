@@ -2,7 +2,6 @@ import qiskit
 import qiskit_aer
 import numpy
 import argparse
-import functions as helpers
 import random
 
 def encodingphase(topical_state: qiskit.QuantumCircuit,):
