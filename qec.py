@@ -17,7 +17,7 @@ def correction_phase(qubits: qiskit.QuantumCircuit, ancilla: qiskit.QuantumCircu
     pass
 
 def qec_circuit(
-        topical_value : float = 0,
+        inital_state : float = 0,
         p_bit_flip : float = 0,
         shots : int = 1024,
         circuit: qiskit.QuantumCircuit | None = None,
@@ -25,7 +25,7 @@ def qec_circuit(
         simulator : qiskit_aer.AerSimulator | None = None,
         error_bit_flip : qiskit_aer.noise.QuantumError | None = None,
         draw_circuit: bool = False,
-) -> {float, int, int}:
+) -> tuple:
     # ==================== Definitions ====================
     # Define the registers
     quantum_register = qiskit.QuantumRegister(5, 'quantum')
@@ -61,12 +61,9 @@ def qec_circuit(
         # if topical_value equals 1, then the qubit should be |1>
         # if topical_value equals 0, then qubiut should be |0>
         # else (if topical_value not equal to (1 or 0)) qubit should be (1-topical_value)|0> + (topical_value)|1>
-    if topical_value % 2 == 1:
-        circuit.x(0)
-    elif topical_value % 2 != 0:
-        circuit.h(0)
+    circuit.ry(2 * numpy.arcsin(numpy.sqrt(inital_state)), 0)
     if ARGS.debug or ARGS.verbose:
-        print(f"V: Topical state defined with value {topical_value} and applied to the first qubit")
+        print(f"V: Inital state defined with value {inital_state} and applied to the first qubit")
     
     # ==================== Encoding phase ====================
     # Use CNOT(0,1) to set the state of the 1st qubit
@@ -176,9 +173,35 @@ def qec_circuit(
 
     # determine if the error correction was successful
     # Expected state: if topical_value is 0, expect "000"; if 1, expect "111"
-    if topical_value % 2 == 0:
+    successes : int = 0
+    failures : int = 0
+    states_111 : int = 0
+    states_000 : int = 0
+    # determine the expected states
+    if inital_state % 2 == 0:
         expected_states = ["000"]
-    elif topical_value % 2 == 1:
+    elif inital_state % 2 == 1:
+        expected_states = ["111"]
+    else:
+        expected_states = ["000", "111"]
+    # gather the number of different states
+    for count, total in counts.items():
+        state = count[:3]
+        if state in expected_states: successes += total
+        else: failures += total
+        if state == "111": states_111 += total
+        else: states_000 += total
+    # Ge the success rate
+    success_rate : float = successes / (successes + failures) if (successes + failures) > 0 else 0
+    # Determine the probabalistic 
+    final_state = states_111 / successes if successes > 0 else 0
+    deviation = abs(inital_state - final_state)
+    # return results
+    return success_rate, successes, failures, deviation
+
+    if inital_state % 2 == 0:
+        expected_states = ["000"]
+    elif inital_state % 2 == 1:
         expected_states = ["111"]
     else:
         expected_states = ["000", "111"]
@@ -230,12 +253,13 @@ def main():
     # Run the circuit for the specified number of iterations
     successes: int = 0
     failures: int = 0
+    avg_deviation: float = 0
     step_size = (1 - ARGS.p_bit_flip) / ARGS.iterations if ARGS.iterate_down or ARGS.iterate_up else 0
     for i in range(ARGS.iterations):
         if ARGS.verbose or ARGS.debug:
             print(f"V: Iteration {i+1}/{ARGS.iterations}")
-        rate, success, failure = qec_circuit(
-            topical_value=ARGS.topical_value,
+        rate, success, failure, deviation = qec_circuit(
+            inital_state=ARGS.topical_value,
             p_bit_flip=ARGS.p_bit_flip,
             shots=ARGS.shots,
             draw_circuit=ARGS.draw,
@@ -244,13 +268,15 @@ def main():
             print(f"V: Iteration {i+1}/{ARGS.iterations} finished running with success rate of {rate}")
         successes += success
         failures += failure
-        print(f"Finished Running circuit {i+1}: Succesful shots: {success}, Failed shots: {failure}, Success rate: {rate:.2%}")
+        avg_deviation += deviation
+        print(f"Finished Running circuit {i+1}\t Succesful shots: {success}\t Failed shots: {failure}\t Success rate: {rate:.2%}\t Deviation: {deviation:.2%}")
         if ARGS.iterate_up:
             ARGS.p_bit_flip += step_size
         elif ARGS.iterate_down:
             ARGS.p_bit_flip -= step_size
     sucess_rate = successes / (successes + failures)
-    print(f"Total successful shots: {successes}, Total failed shots: {failures}, Overall success rate: {(sucess_rate):.2%}")
+    avg_deviation /= ARGS.iterations
+    print(f"Total successful shots: {successes}, Total failed shots: {failures}, Overall success rate: {(sucess_rate):.2%}, Average deviation: {avg_deviation:.2%}")
     return 0
 
 if __name__ == "__main__":
