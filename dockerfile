@@ -11,12 +11,12 @@ COPY requirements.txt /quant_comp_project/
 RUN pip install -r requirements.txt --no-cache-dir
 
 # Copy source files
-COPY main.py /quant_comp_project/
-COPY functions.py /quant_comp_project/
-COPY test_functions.py /quant_comp_project/
+COPY src/ /quant_comp_project/src/
+COPY tests/ /quant_comp_project/tests/
 COPY .git /quant_comp_project/
 
 # Run test
+RUN pytest
 
 # Run on entrance
 CMD ["python3", "main.py"]
