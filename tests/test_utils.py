@@ -1,3 +1,4 @@
+import pytest
 from functions import *
 
 def test_create_circuit():
