@@ -214,3 +214,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Notes
+*notes*
+*temp*
+
+# Project generated data
+*data.txt
