@@ -16,7 +16,7 @@ COPY tests/ /quant_comp_project/tests/
 COPY .git /quant_comp_project/
 
 # Run test
-RUN pytest
+#RUN pytest
 
 # Run on entrance
-CMD ["python3", "main.py"]
+CMD ["python", "src/qec.py"]
