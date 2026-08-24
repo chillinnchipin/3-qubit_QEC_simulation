@@ -1,5 +1,5 @@
 import pytest
-from functions import *
+from utils import *
 
 def test_create_circuit():
     pass

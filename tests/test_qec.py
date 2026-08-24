@@ -1,4 +1,5 @@
 import pytest
+from qec import *
 
 def test_encodingphase():
     assert False
