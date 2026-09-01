@@ -4,18 +4,6 @@ import numpy
 import argparse
 import random
 
-def encodingphase(topical_state: qiskit.QuantumCircuit,):
-    pass
-
-def noise_simulation(qubits: qiskit.QuantumCircuit, ):
-    pass
-
-def recovery_phase(qubits: qiskit.QuantumCircuit, ancilla: qiskit.QuantumCircuit = qiskit.QuantumCircuit(2)):
-    pass
-
-def correction_phase(qubits: qiskit.QuantumCircuit, ancilla: qiskit.QuantumCircuit = qiskit.QuantumCircuit(2)):
-    pass
-
 def qec_circuit(
         inital_state : float = 0,
         p_bit_flip : float = 0,
@@ -198,28 +186,6 @@ def qec_circuit(
     deviation = abs(inital_state - final_state)
     # return results
     return success_rate, successes, failures, deviation
-
-    if inital_state % 2 == 0:
-        expected_states = ["000"]
-    elif inital_state % 2 == 1:
-        expected_states = ["111"]
-    else:
-        expected_states = ["000", "111"]
-
-    sucesses: int = 0
-    failures: int = 0
-    success_rate: float = 0
-    for count in counts:
-        if count[:3] in expected_states:
-            sucesses += counts[count]
-            if ARGS.debug or ARGS.verbose:
-                print(f"V: Count {count} is a success with {counts[count]} shots")
-        else:
-            failures += counts[count]
-            if ARGS.debug or ARGS.verbose:
-                print(f"V: Count {count} is a failure with {counts[count]} shots")
-    success_rate = sucesses / (sucesses + failures) if (sucesses + failures) > 0 else 0
-    return success_rate, sucesses, failures
 
 def main():
     # Parse the command line arguments
