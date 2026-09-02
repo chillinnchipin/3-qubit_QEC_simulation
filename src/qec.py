@@ -1,49 +1,51 @@
-import qiskit
-import qiskit_aer
-import numpy
-import argparse
+from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister
+from qiskit.compiler import transpile 
+from qiskit_aer import AerSimulator
+from qiskit_aer.noise import QuantumError, pauli_error
+from numpy import sqrt, arcsin
+from argparse import ArgumentParser
 import random
 
 def qec_circuit(
         inital_state : float = 0,
         p_bit_flip : float = 0,
         shots : int = 1024,
-        circuit: qiskit.QuantumCircuit | None = None,
-        register : qiskit.ClassicalRegister | None = None,
-        simulator : qiskit_aer.AerSimulator | None = None,
-        error_bit_flip : qiskit_aer.noise.QuantumError | None = None,
+        circuit: QuantumCircuit | None = None,
+        register : ClassicalRegister | None = None,
+        simulator : AerSimulator | None = None,
+        error_bit_flip : QuantumError | None = None,
         draw_circuit: bool = False,
 ) -> tuple:
     # ==================== Definitions ====================
     # Define the registers
-    quantum_register = qiskit.QuantumRegister(5, 'quantum')
+    quantum_register = QuantumRegister(5, 'quantum')
     if ARGS.debug or ARGS.verbose:
         print("V: Quantum register defined with 5 qubits")
-    syndrome = qiskit.ClassicalRegister(2, 'syndrome')
+    syndrome = ClassicalRegister(2, 'syndrome')
     if ARGS.debug or ARGS.verbose:
         print("V: Syndrome register defined with 2 bits")
     if register == None:
-        register = qiskit.ClassicalRegister(3, 'Full Register')
+        register = ClassicalRegister(3, 'Full Register')
     if ARGS.debug or ARGS.verbose:
         print("V: Full register defined with 5 bits")
     
     # Define the circuit if not previously defined
     if circuit == None:
-        circuit = qiskit.QuantumCircuit(quantum_register, syndrome, register)
+        circuit = QuantumCircuit(quantum_register, syndrome, register)
     if ARGS.debug or ARGS.verbose:
         print("V: Quantum circuit defined with the quantum register and the classical registers")
 
     # Define the simulator and set the noise if not already defined
     if simulator == None:
-        simulator = qiskit_aer.AerSimulator()
+        simulator = AerSimulator()
     if ARGS.debug or ARGS.verbose:
         print("V: Simulator defined with the AerSimulator backend")
     if error_bit_flip == None:
-        error_bit_flip = qiskit_aer.noise.errors.pauli_error([('X', p_bit_flip), ('I', 1 - p_bit_flip)])
+        error_bit_flip = pauli_error([('X', p_bit_flip), ('I', 1 - p_bit_flip)])
     if ARGS.debug or ARGS.verbose:
         print(f"V: Bit-flip error defined with probability {p_bit_flip} for X and {1 - p_bit_flip} for I")
 
-    circuit.ry(2 * numpy.arcsin(numpy.sqrt(inital_state)), 0)
+    circuit.ry(2 * arcsin(sqrt(inital_state)), 0)
     if ARGS.debug or ARGS.verbose:
         print(f"V: Inital state defined with value {inital_state} and applied to the first qubit")
     
@@ -145,7 +147,7 @@ def qec_circuit(
         print(final_circuit)
     
     # compile the circuit
-    transpiled_circuit = qiskit.compiler.transpile(circuit, simulator)
+    transpiled_circuit = transpile(circuit, simulator)
 
     # run the circuit on the simulator
     result = simulator.run(transpiled_circuit, shots=shots).result()
@@ -183,7 +185,7 @@ def qec_circuit(
 
 def main():
     # Parse the command line arguments
-    parser = argparse.ArgumentParser(description="A simple implementation of the 3-qubit bit-flip code in Qiskit.")
+    parser = ArgumentParser(description="A simple implementation of the 3-qubit bit-flip code in Qiskit.")
     parser.add_argument("-v", "--topical_value", type=float, default=0, help="The value of the topical state to be encoded. (default: 0)")
     parser.add_argument("-p", "--p_bit_flip", type=float, default=0, help="The probability of a bit-flip error occurring on each qubit during the noise simulation phase. (default: 0)")
     parser.add_argument("-s", "--shots", type=int, default=1024, help="The number of shots to run the circuit on the simulator. (default: 1024)")
