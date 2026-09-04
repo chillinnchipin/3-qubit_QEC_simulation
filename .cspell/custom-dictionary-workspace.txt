@@ -1,0 +1,7 @@
+# Custom Dictionary Words
+qiskit
+arcsin
+qubit
+qubits
+CNOT
+multivector
