@@ -185,16 +185,16 @@ def qec_circuit(
 
 def main():
     # Parse the command line arguments
-    parser = ArgumentParser(description="A simple implementation of the 3-qubit bit-flip code in Qiskit.")
-    parser.add_argument("-v", "--topical_value", type=float, default=0, help="The value of the topical state to be encoded. (default: 0)")
-    parser.add_argument("-p", "--p_bit_flip", type=float, default=0, help="The probability of a bit-flip error occurring on each qubit during the noise simulation phase. (default: 0)")
-    parser.add_argument("-s", "--shots", type=int, default=1024, help="The number of shots to run the circuit on the simulator. (default: 1024)")
-    parser.add_argument("-it", "--iterations", type=int, default=1, help="The number of times to run the circuit with the same parameters. (default: 1)")
-    parser.add_argument("--iterate_up", action="store_true", help="Increase the probability of bit flip error with each iteration.")
-    parser.add_argument("--iterate_down", action="store_true", help="Decrease the probability of bit flip error with each iteration.")
-    parser.add_argument("-d", "--draw", action="store_true", help="Draw the circuit at iteration")
-    parser.add_argument("-V", "--verbose", action="store_true", help="Print the circuit and the results in a more verbose format.")
-    parser.add_argument("-D", "--debug", action="store_true", help="Turns on the debug mode, which sets the verbose mode and prints any errors that occur")
+    parser = ArgumentParser(description="Simulate the 3-qubit bit-flip quantum error-correction code in Qiskit. Prepares a single logical qubit in a chosen initial state, encodes it across three physical qubits, applies independent Pauli-X (bit-flip) errors with a configurable probability, measures two syndrome qubits to detect which qubit (if any) was flipped, and applies the corresponding correction. Reports the success rate and deviation from the expected result across one or more runs.")
+    parser.add_argument("-v", "--topical_value", type=float, default=0, help="Initial state of the logical qubit, given as the probability of measuring |1⟩ (0.0 = |0⟩, 1.0 = |1⟩; values in between prepare a superposition). (default: 0)")
+    parser.add_argument("-p", "--p_bit_flip", type=float, default=0, help="Probability that an independent Pauli-X (bit-flip) error is applied to each of the three data qubits during the noise simulation phase. (default: 0)")
+    parser.add_argument("-s", "--shots", type=int, default=1024, help="Number of shots the simulator runs per circuit. (default: 1024)")
+    parser.add_argument("-it", "--iterations", type=int, default=1, help="Number of times the full circuit is built and run with the given parameters. Unlike --shots, which repeats measurement of one fixed circuit, each iteration constructs a fresh circuit — combine with --iterate_up/--iterate_down to vary the bit-flip probability across iterations. (default: 1)")
+    parser.add_argument("--iterate_up", action="store_true", help="Increase --p_bit_flip by a fixed step each iteration (step = (1 - initial p_bit_flip) / iterations). Cannot be combined with --iterate_down.")
+    parser.add_argument("--iterate_down", action="store_true", help="Decrease --p_bit_flip by a fixed step each iteration (step = (1 - initial p_bit_flip) / iterations). Cannot be combined with --iterate_up.")
+    parser.add_argument("-d", "--draw", action="store_true", help="Print the generated circuit — including the encoding, noise, recovery, and correction phases — and the resulting measurement counts, for each iteration.")
+    parser.add_argument("-V", "--verbose", action="store_true", help="Print step-by-step detail about circuit construction and execution as the simulation runs.")
+    parser.add_argument("-D", "--debug", action="store_true", help="Enable debug mode. Implies --verbose.")
     global ARGS
     ARGS = parser.parse_args()
     if ARGS.iterate_down and ARGS.iterate_up:
