@@ -7,7 +7,7 @@ from argparse import ArgumentParser
 import random
 
 def qec_circuit(
-        inital_state : float = 0,
+        initial_state : float = 0,
         p_bit_flip : float = 0,
         shots : int = 1024,
         circuit: QuantumCircuit | None = None,
@@ -45,9 +45,9 @@ def qec_circuit(
     if ARGS.debug or ARGS.verbose:
         print(f"V: Bit-flip error defined with probability {p_bit_flip} for X and {1 - p_bit_flip} for I")
 
-    circuit.ry(2 * arcsin(sqrt(inital_state)), 0)
+    circuit.ry(2 * arcsin(sqrt(initial_state)), 0)
     if ARGS.debug or ARGS.verbose:
-        print(f"V: Inital state defined with value {inital_state} and applied to the first qubit")
+        print(f"V: Initial state defined with value {initial_state} and applied to the first qubit")
     
     # ==================== Encoding phase ====================
     # Use CNOT(0,1) to set the state of the 1st qubit
@@ -58,12 +58,12 @@ def qec_circuit(
 
     # Divide and draw the phase
     circuit.barrier()
-    encodingphase = circuit.draw()
+    encoding_phase = circuit.draw()
     if ARGS.debug or ARGS.verbose:
         print("V: Encoding phase completed and drawn")
-        print(f"\tEncoding phase:\n{encodingphase}")
+        print(f"\tEncoding phase:\n{encoding_phase}")
 
-    # ==================== Error simualtion phase ====================
+    # ==================== Error simulation phase ====================
 
     # Simulate the chance of bit-flip on qubit 0
     circuit.append(error_bit_flip, [0])
@@ -162,9 +162,9 @@ def qec_circuit(
     states_111 : int = 0
     states_000 : int = 0
     # determine the expected states
-    if inital_state % 2 == 0:
+    if initial_state % 2 == 0:
         expected_states = ["000"]
-    elif inital_state % 2 == 1:
+    elif initial_state % 2 == 1:
         expected_states = ["111"]
     else:
         expected_states = ["000", "111"]
@@ -177,9 +177,9 @@ def qec_circuit(
         else: states_000 += total
     # Ge the success rate
     success_rate : float = successes / (successes + failures) if (successes + failures) > 0 else 0
-    # Determine the probabalistic 
+    # Determine the probabilistic 
     final_state = states_111 / successes if successes > 0 else 0
-    deviation = abs(inital_state - final_state)
+    deviation = abs(initial_state - final_state)
     # return results
     return success_rate, successes, failures, deviation
 
@@ -221,7 +221,7 @@ def main():
         if ARGS.verbose or ARGS.debug:
             print(f"V: Iteration {i+1}/{ARGS.iterations}")
         rate, success, failure, deviation = qec_circuit(
-            inital_state=ARGS.topical_value,
+            initial_state=ARGS.topical_value,
             p_bit_flip=ARGS.p_bit_flip,
             shots=ARGS.shots,
             draw_circuit=ARGS.draw,
@@ -231,16 +231,16 @@ def main():
         successes += success
         failures += failure
         avg_deviation += deviation
-        print(f"Finished Running circuit {i+1}\t Succesful shots: {success}\t Failed shots: {failure}\t Success rate: {rate:.2%}\t Deviation: {deviation:.2%}")
+        print(f"Finished Running circuit {i+1}\t Successful shots: {success}\t Failed shots: {failure}\t Success rate: {rate:.2%}\t Deviation: {deviation:.2%}")
         if ARGS.iterate_up:
             ARGS.p_bit_flip += step_size
         elif ARGS.iterate_down:
             ARGS.p_bit_flip -= step_size
-    sucess_rate = successes / (successes + failures)
+    success_rate = successes / (successes + failures)
     avg_deviation /= ARGS.iterations
-    print(f"Total successful shots: {successes}, Total failed shots: {failures}, Overall success rate: {(sucess_rate):.2%}, Average deviation: {avg_deviation:.2%}")
+    print(f"Total successful shots: {successes}, Total failed shots: {failures}, Overall success rate: {(success_rate):.2%}, Average deviation: {avg_deviation:.2%}")
     return 0
 
 if __name__ == "__main__":
     if main() != 0:
-        raise RuntimeError("Error occured during runtime")
+        raise RuntimeError("Error occurred during runtime")

@@ -1,6 +1,6 @@
 from argparse import ArgumentParser
 # TODO: remove main from imports
-from qec import qec_circuit, main
+from src.qec import qec_circuit, main
 
 if __name__ == "__main__":
     argument_parser = ArgumentParser(
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     for i in range(ARGS.iterations):
         # Run the circuit
         success_rate, successes, failures, deviation = qec_circuit(
-            inital_state=ARGS.topical_value,
+            initial_state=ARGS.topical_value,
             p_bit_flip=ARGS.p_bit_flip, 
             shots=ARGS.shots,
             draw_circuit=ARGS.draw,
