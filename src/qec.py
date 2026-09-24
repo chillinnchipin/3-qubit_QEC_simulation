@@ -4,6 +4,7 @@ from qiskit_aer import AerSimulator
 from qiskit_aer.noise import QuantumError, pauli_error
 from numpy import sqrt, arcsin
 from argparse import ArgumentParser
+from .utils import get_args
 import random
 
 def qec_circuit(
@@ -185,32 +186,8 @@ def qec_circuit(
 
 def main():
     # Parse the command line arguments
-    parser = ArgumentParser(description="Simulate the 3-qubit bit-flip quantum error-correction code in Qiskit. Prepares a single logical qubit in a chosen initial state, encodes it across three physical qubits, applies independent Pauli-X (bit-flip) errors with a configurable probability, measures two syndrome qubits to detect which qubit (if any) was flipped, and applies the corresponding correction. Reports the success rate and deviation from the expected result across one or more runs.")
-    parser.add_argument("-v", "--topical_value", type=float, default=0, help="Initial state of the logical qubit, given as the probability of measuring |1⟩ (0.0 = |0⟩, 1.0 = |1⟩; values in between prepare a superposition). (default: 0)")
-    parser.add_argument("-p", "--p_bit_flip", type=float, default=0, help="Probability that an independent Pauli-X (bit-flip) error is applied to each of the three data qubits during the noise simulation phase. (default: 0)")
-    parser.add_argument("-s", "--shots", type=int, default=1024, help="Number of shots the simulator runs per circuit. (default: 1024)")
-    parser.add_argument("-it", "--iterations", type=int, default=1, help="Number of times the full circuit is built and run with the given parameters. Unlike --shots, which repeats measurement of one fixed circuit, each iteration constructs a fresh circuit — combine with --iterate_up/--iterate_down to vary the bit-flip probability across iterations. (default: 1)")
-    parser.add_argument("--iterate_up", action="store_true", help="Increase --p_bit_flip by a fixed step each iteration (step = (1 - initial p_bit_flip) / iterations). Cannot be combined with --iterate_down.")
-    parser.add_argument("--iterate_down", action="store_true", help="Decrease --p_bit_flip by a fixed step each iteration (step = (1 - initial p_bit_flip) / iterations). Cannot be combined with --iterate_up.")
-    parser.add_argument("-d", "--draw", action="store_true", help="Print the generated circuit — including the encoding, noise, recovery, and correction phases — and the resulting measurement counts, for each iteration.")
-    parser.add_argument("-V", "--verbose", action="store_true", help="Print step-by-step detail about circuit construction and execution as the simulation runs.")
-    parser.add_argument("-D", "--debug", action="store_true", help="Enable debug mode. Implies --verbose.")
     global ARGS
-    ARGS = parser.parse_args()
-    if ARGS.iterate_down and ARGS.iterate_up:
-        raise ValueError("Error: Cannot iterate both up and down. Please choose one or the other.")
-
-    # Print verbose outputs
-    if ARGS.debug:
-        ARGS.verbose = True
-        print("V: Debug mode is set to true")
-    if ARGS.verbose:
-        print("V: Verbose mode is set to true")
-    if ARGS.verbose or ARGS.debug:
-        print(f"V: Topical value: {ARGS.topical_value}")
-        print(f"V: Probability of bit-flip error: {ARGS.p_bit_flip}")
-        print(f"V: Number of shots: {ARGS.shots}")
-        print(f"V: Number of iterations: {ARGS.iterations}")
+    ARGS = get_args()
 
     # Run the circuit for the specified number of iterations
     successes: int = 0
