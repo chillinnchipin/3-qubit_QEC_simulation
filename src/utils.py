@@ -1,6 +1,18 @@
 from typing import Any
 from argparse import ArgumentParser
 
+def set_debug_mode(to_set: bool) -> bool:
+    """ sets the debug mode to the given value and returns the new value """
+    global debug
+    debug = to_set
+    return debug
+
+def set_verbose_outputs(to_set: bool) -> bool:
+    """ sets the verbose output mode to the given value and returns the new value"""
+    global verbose
+    verbose = to_set
+    return verbose
+
 def get_args() -> Any: 
     argument_parser = ArgumentParser(
         prog="python -m qec",
@@ -22,13 +34,13 @@ def get_args() -> Any:
     if ARGS.iterate_down and ARGS.iterate_up:
         raise ValueError("Error: Cannot iterate both up and down. Please choose one or the other.")
 
-    # Print verbose outputs
-    if ARGS.debug:
-        ARGS.verbose = True
-        print("V: Debug mode is set to true")
-    if ARGS.verbose:
-        print("V: Verbose mode is set to true")
-    if ARGS.verbose or ARGS.debug:
+    # Set debug mode and verbose outputs
+    if ARGS.debug: ARGS.verbose = True
+    set_debug_mode(ARGS.debug)
+    set_verbose_outputs(ARGS.verbose)
+    if verbose:
+        print(f"V: Debug mode is set to {debug}")
+        print(f"V: Verbose mode is set to {verbose}")
         print(f"V: Topical value: {ARGS.topical_value}")
         print(f"V: Probability of bit-flip error: {ARGS.p_bit_flip}")
         print(f"V: Number of shots: {ARGS.shots}")
