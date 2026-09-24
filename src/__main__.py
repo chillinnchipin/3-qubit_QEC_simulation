@@ -1,6 +1,5 @@
 from argparse import ArgumentParser
-# TODO: remove main from imports
-from src.qec import qec_circuit, main
+from src.qec import qec_circuit
 
 if __name__ == "__main__":
     argument_parser = ArgumentParser(
