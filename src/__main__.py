@@ -1,5 +1,5 @@
 from argparse import ArgumentParser
-from src.qec import qec_circuit
+from .qec_circuit import qec_circuit
 from .utils import get_args
 
 if __name__ == "__main__":
