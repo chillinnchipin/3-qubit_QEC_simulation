@@ -13,9 +13,9 @@ def set_verbose_outputs(to_set: bool) -> bool:
     verbose = to_set
     return verbose
 
-def get_args() -> Any: 
+def get_args(prog: str = "qec", args_list: list[str] = None) -> Any: 
     argument_parser = ArgumentParser(
-        prog="python -m qec",
+        prog=prog,
         description="Simulate the 3-qubit bit-flip quantum error-correction code in Qiskit: prepare and encode a qubit, apply independent Pauli-X errors, measure error syndromes, correct a single bit flip, and report the resulting success rate and deviation.",
     )
     # Add Arguments
@@ -30,7 +30,7 @@ def get_args() -> Any:
     argument_parser.add_argument("-D", "--debug", action="store_true", help="Enable debug mode. Implies --verbose.")
     
     # Parse Arguments
-    ARGS = argument_parser.parse_args()
+    ARGS = argument_parser.parse_args(args_list)
     if ARGS.iterate_down and ARGS.iterate_up:
         raise ValueError("Error: Cannot iterate both up and down. Please choose one or the other.")
 
