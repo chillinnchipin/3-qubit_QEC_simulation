@@ -4,7 +4,7 @@ from qiskit_aer import AerSimulator
 from qiskit_aer.noise import QuantumError, pauli_error
 from numpy import sqrt, arcsin
 from argparse import ArgumentParser
-from .utils import get_args
+from utils import get_args, set_debug_mode, set_verbose_outputs
 import random
 
 def qec_circuit(
@@ -17,37 +17,38 @@ def qec_circuit(
         error_bit_flip : QuantumError | None = None,
         draw_circuit: bool = False,
 ) -> tuple:
+    from utils import debug, verbose
     # ==================== Definitions ====================
     # Define the registers
     quantum_register = QuantumRegister(5, 'quantum')
-    if ARGS.debug or ARGS.verbose:
+    if debug or verbose:
         print("V: Quantum register defined with 5 qubits")
     syndrome = ClassicalRegister(2, 'syndrome')
-    if ARGS.debug or ARGS.verbose:
+    if debug or verbose:
         print("V: Syndrome register defined with 2 bits")
     if register == None:
         register = ClassicalRegister(3, 'Full Register')
-    if ARGS.debug or ARGS.verbose:
+    if debug or verbose:
         print("V: Full register defined with 5 bits")
     
     # Define the circuit if not previously defined
     if circuit == None:
         circuit = QuantumCircuit(quantum_register, syndrome, register)
-    if ARGS.debug or ARGS.verbose:
+    if debug or verbose:
         print("V: Quantum circuit defined with the quantum register and the classical registers")
 
     # Define the simulator and set the noise if not already defined
     if simulator == None:
         simulator = AerSimulator()
-    if ARGS.debug or ARGS.verbose:
+    if debug or verbose:
         print("V: Simulator defined with the AerSimulator backend")
     if error_bit_flip == None:
         error_bit_flip = pauli_error([('X', p_bit_flip), ('I', 1 - p_bit_flip)])
-    if ARGS.debug or ARGS.verbose:
+    if debug or verbose:
         print(f"V: Bit-flip error defined with probability {p_bit_flip} for X and {1 - p_bit_flip} for I")
 
     circuit.ry(2 * arcsin(sqrt(initial_state)), 0)
-    if ARGS.debug or ARGS.verbose:
+    if debug or verbose:
         print(f"V: Initial state defined with value {initial_state} and applied to the first qubit")
     
     # ==================== Encoding phase ====================
@@ -60,7 +61,7 @@ def qec_circuit(
     # Divide and draw the phase
     circuit.barrier()
     encoding_phase = circuit.draw()
-    if ARGS.debug or ARGS.verbose:
+    if debug or verbose:
         print("V: Encoding phase completed and drawn")
         print(f"\tEncoding phase:\n{encoding_phase}")
 
@@ -68,23 +69,23 @@ def qec_circuit(
 
     # Simulate the chance of bit-flip on qubit 0
     circuit.append(error_bit_flip, [0])
-    if ARGS.debug or ARGS.verbose:
+    if debug or verbose:
         print(f"V: Added chance of bit flip error to qubit 0 with chance {p_bit_flip}")
     
     # Simulate the chance of bit-flip on qubit 1
     circuit.append(error_bit_flip, [1])
-    if ARGS.debug or ARGS.verbose:
+    if debug or verbose:
         print(f"V: Added chance of bit flip error to qubit 1 with chance {p_bit_flip}")
 
     # Simulate the chance of bit-flip on qubit 2
     circuit.append(error_bit_flip, [2])
-    if ARGS.debug or ARGS.verbose:
+    if debug or verbose:
         print(f"V: Added chance of bit flip error to qubit 2 with chance {p_bit_flip}")
     
     # Divide and draw the phase
     circuit.barrier()
     noise_phase = circuit.draw()
-    if ARGS.debug or ARGS.verbose:
+    if debug or verbose:
         print("V: Noise simulation phase completed and drawn")
         print(f"\tNoise simulation phase:\n{noise_phase}")
 
@@ -101,7 +102,7 @@ def qec_circuit(
     # Divide and draw the phase
     circuit.barrier()
     recovery_phase = circuit.draw()
-    if ARGS.debug or ARGS.verbose:
+    if debug or verbose:
         print("V: Recovery operation phase completed and drawn")
         print(f"\tRecovery operation phase:\n{recovery_phase}")
 
@@ -111,27 +112,27 @@ def qec_circuit(
     circuit.measure(quantum_register[3], syndrome[0])
     circuit.measure(quantum_register[4], syndrome[1])
     circuit.barrier()
-    if ARGS.debug or ARGS.verbose:
+    if debug or verbose:
         print("V: Ancilla measured and syndrome register updated")
 
     # apply corrections based on the measured of the ancilla
     with circuit.if_test((syndrome, 1)):
         circuit.x(quantum_register[0])
-        if ARGS.debug or ARGS.verbose:
+        if debug or verbose:
             print("V: Correction applied to qubit 0 based on syndrome measurement")
     with circuit.if_test((syndrome, 3)):
         circuit.x(quantum_register[1])
-        if ARGS.debug or ARGS.verbose:
+        if debug or verbose:
             print("V: Correction applied to qubit 1 based on syndrome measurement")
     with circuit.if_test((syndrome, 2)):
         circuit.x(quantum_register[2])
-        if ARGS.debug or ARGS.verbose:
+        if debug or verbose:
             print("V: Correction applied to qubit 2 based on syndrome measurement")
 
     # Divide and draw the phase
     circuit.barrier()
     correction_phase = circuit.draw()
-    if ARGS.debug or ARGS.verbose:
+    if debug or verbose:
         print("V: Error correction phase completed and drawn")
         print(f"\tError correction phase:\n{correction_phase}")
     
@@ -188,6 +189,7 @@ def main():
     # Parse the command line arguments
     global ARGS
     ARGS = get_args()
+    from utils import debug, verbose
 
     # Run the circuit for the specified number of iterations
     successes: int = 0
@@ -195,7 +197,7 @@ def main():
     avg_deviation: float = 0
     step_size = (1 - ARGS.p_bit_flip) / ARGS.iterations if ARGS.iterate_down or ARGS.iterate_up else 0
     for i in range(ARGS.iterations):
-        if ARGS.verbose or ARGS.debug:
+        if verbose or debug:
             print(f"V: Iteration {i+1}/{ARGS.iterations}")
         rate, success, failure, deviation = qec_circuit(
             initial_state=ARGS.topical_value,
@@ -203,7 +205,7 @@ def main():
             shots=ARGS.shots,
             draw_circuit=ARGS.draw,
         )
-        if ARGS.verbose or ARGS.debug:
+        if verbose or debug:
             print(f"V: Iteration {i+1}/{ARGS.iterations} finished running with success rate of {rate}")
         successes += success
         failures += failure
